@@ -4,7 +4,7 @@ from .models import *
 
 class RegisterSerializer(ModelSerializer):
     groups = SlugRelatedField(
-        many=False,
+        many=True,
         slug_field='name',
         queryset=Group.objects.all()
     )
@@ -19,7 +19,7 @@ class RegisterSerializer(ModelSerializer):
     def create(self, validated_data):
         groups_data = validated_data.pop('groups', [])
         user = User.objects.create_user(**validated_data)
-        user.groups.set(groups_data)
+        user.groups.set(groups_data) 
         return user
     
 
@@ -42,9 +42,10 @@ class GroupSerializer(ModelSerializer):
     
 class UserSerializer(HyperlinkedModelSerializer):
     groups = SlugRelatedField(
-        many=False,
+        many=True,
         slug_field='name',
-        queryset=Group.objects.all()
+        queryset=Group.objects.all(),
+        required=False
     )
     class Meta:
         model = User
@@ -56,22 +57,40 @@ class GroupSerializer(HyperlinkedModelSerializer):
         model = Group
         fields = ['url', 'name']
 
+
 class CategoriaSerializer(ModelSerializer):
     class Meta:
         model = Categoria
         fields = ['id', 'nombre']
+
 
 class ProductoSerializer(ModelSerializer):
     class Meta:
         model = Producto
         fields = ['id', 'categoria', 'nombre', 'tipo', 'medidas', 'precio', 'foto']
 
+
 class SucursalSerializer(ModelSerializer):
     class Meta:
         model = Sucursal
         fields = ['id', 'nombre', 'direccion']
 
+
 class InventarioSerializer(ModelSerializer):
     class Meta:
         model = Inventario
         fields = ['id', 'producto', 'sucursal', 'cantidad']
+
+
+class DetalleCarritoSerializer(ModelSerializer):
+    class Meta:
+        model = DetalleCarrito
+        fields = '__all__'
+
+
+class CarritoSerializer(ModelSerializer):
+    detalles = DetalleCarritoSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Carrito
+        fields = ['id', 'fecha_creacion', 'id_usuario', 'detalles']

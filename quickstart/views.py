@@ -1,9 +1,11 @@
 from django.contrib.auth.models import Group, User
-from rest_framework import permissions, viewsets, status, generics
-from rest_framework.permissions import AllowAny
+from rest_framework import  viewsets, status, generics
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.decorators import api_view, permission_classes
 from .models import *
 from quickstart.serializers import *
+from django.utils import timezone
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -17,12 +19,9 @@ class PermissionViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint that allows users to be viewed or edited.
-    """
-    queryset = User.objects.all().order_by('-date_joined')
+    queryset = User.objects.filter(is_active=True).order_by('-date_joined')
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         instance.is_active = False
@@ -31,12 +30,9 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class GroupViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint that allows groups to be viewed or edited.
-    """
     queryset = Group.objects.all().order_by('name')
     serializer_class = GroupSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
 
 class SoftDeleteModelViewSet(viewsets.ModelViewSet):
@@ -49,22 +45,52 @@ class SoftDeleteModelViewSet(viewsets.ModelViewSet):
 class CategoriaViewSet(SoftDeleteModelViewSet):
     queryset = Categoria.objects.filter(eliminado=False)
     serializer_class = CategoriaSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
 
 class ProductoViewSet(SoftDeleteModelViewSet):
     queryset = Producto.objects.filter(eliminado=False)
     serializer_class = ProductoSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
 
 class SucursalViewSet(SoftDeleteModelViewSet):
     queryset = Sucursal.objects.filter(eliminado=False)
     serializer_class = SucursalSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
 
 class InventariosViewSet(SoftDeleteModelViewSet):
     queryset = Inventario.objects.filter(eliminado=False)
     serializer_class = InventarioSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
+
+
+class CarritoViewSet(viewsets.ModelViewSet):
+    queryset = Carrito.objects.all()
+    serializer_class = CarritoSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(id_usuario=self.request.user)
+
+
+class DetalleCarritoViewSet(viewsets.ModelViewSet):
+    queryset = DetalleCarrito.objects.all()
+    serializer_class = DetalleCarritoSerializer
+    permission_classes = [IsAuthenticated]
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def ultimo_carrito_usuario(request):
+    carrito = Carrito.objects.filter(id_usuario=request.user).order_by('-fecha_creacion').first()
+
+    if not carrito:
+        carrito = Carrito.objects.create(
+            id_usuario=request.user,
+            fecha_creacion=timezone.now()
+        )
+
+    serializer = CarritoSerializer(carrito)
+    return Response(serializer.data)

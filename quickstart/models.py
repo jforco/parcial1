@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 class SoftDeleteModel(models.Model):
     eliminado = models.BooleanField(default=False)
@@ -51,3 +52,24 @@ class Inventario(SoftDeleteModel):
 
     def __str__(self):
         return f"{self.producto.nombre} en {self.sucursal.nombre}: {self.cantidad}"
+    
+
+class Carrito(SoftDeleteModel):
+    id = models.AutoField(primary_key=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    id_usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='carritos')
+
+    def __str__(self):
+        return f'Carrito {self.id} de {self.id_usuario.username}'
+
+
+class DetalleCarrito(SoftDeleteModel):
+    id = models.AutoField(primary_key=True)
+    id_carrito = models.ForeignKey(Carrito, on_delete=models.CASCADE, related_name='detalles')
+    id_producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
+    cantidad = models.PositiveIntegerField()
+
+    def __str__(self):
+        return f'{self.cantidad}x {self.id_producto.nombre} en carrito {self.id_carrito.id}'
+    
+

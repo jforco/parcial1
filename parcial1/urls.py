@@ -34,6 +34,8 @@ router.register(r'categorias', CategoriaViewSet)
 router.register(r'productos', ProductoViewSet)
 router.register(r'sucursales', SucursalViewSet)
 router.register(r'inventarios', InventariosViewSet)
+router.register(r'carritos', CarritoViewSet)
+router.register(r'detalles_carrito', DetalleCarritoViewSet)
 
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browsable API.
@@ -49,4 +51,9 @@ urlpatterns += [
     path('api/token/refresh', TokenRefreshView.as_view(), name='token_refresh'),  # refresh
     path('api/token/logout', TokenBlacklistView.as_view(), name='token_blacklist'),  # logout
     path('api/register', RegisterView.as_view(), name='register'),
+]
+
+#vistas personalizadas
+urlpatterns += [ 
+    path('ultimo_carrito/', ultimo_carrito_usuario),
 ]
