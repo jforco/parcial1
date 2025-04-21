@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'quickstart',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
+]
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
