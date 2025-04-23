@@ -55,5 +55,5 @@ urlpatterns += [
 
 #vistas personalizadas
 urlpatterns += [ 
-    path('ultimo_carrito/', ultimo_carrito_usuario),
+    path('api/ultimo_carrito/', ultimo_carrito_usuario),
 ]

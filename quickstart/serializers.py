@@ -1,5 +1,5 @@
 from django.contrib.auth.models import Group, User, Permission
-from rest_framework.serializers import ModelSerializer, HyperlinkedModelSerializer, SlugRelatedField, PrimaryKeyRelatedField
+from rest_framework.serializers import ModelSerializer, HyperlinkedModelSerializer, SlugRelatedField, PrimaryKeyRelatedField, SerializerMethodField
 from .models import *
 
 class RegisterSerializer(ModelSerializer):
@@ -65,9 +65,15 @@ class CategoriaSerializer(ModelSerializer):
 
 
 class ProductoSerializer(ModelSerializer):
+    inventario = SerializerMethodField()
+
     class Meta:
         model = Producto
-        fields = ['id', 'categoria', 'nombre', 'tipo', 'medidas', 'precio', 'foto']
+        fields = ['id', 'categoria', 'nombre', 'tipo', 'medidas', 'precio', 'foto', 'inventario']
+
+    def get_inventario(self, obj):
+        inventarios = Inventario.objects.filter(producto=obj, eliminado=False)  # si usás soft delete
+        return InventarioSerializer(inventarios, many=True).data
 
 
 class SucursalSerializer(ModelSerializer):
@@ -77,6 +83,7 @@ class SucursalSerializer(ModelSerializer):
 
 
 class InventarioSerializer(ModelSerializer):
+    sucursal = SucursalSerializer() 
     class Meta:
         model = Inventario
         fields = ['id', 'producto', 'sucursal', 'cantidad']
