@@ -99,7 +99,7 @@ class DetalleCarritoSerializer(ModelSerializer):
     id_producto = ProductoSimpleSerializer(read_only=True)
     class Meta:
         model = DetalleCarrito
-        fields = ['id', 'id_producto', 'cantidad']
+        fields = ['id', 'id_carrito', 'id_producto', 'cantidad']
 
 
 class CarritoSerializer(ModelSerializer):
