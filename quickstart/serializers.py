@@ -92,7 +92,7 @@ class InventarioSerializer(ModelSerializer):
 class ProductoSimpleSerializer(ModelSerializer):
     class Meta:
         model = Producto
-        fields = ['id', 'nombre'] 
+        fields = ['id', 'nombre', 'precio'] 
 
 
 class DetalleCarritoSerializer(ModelSerializer):

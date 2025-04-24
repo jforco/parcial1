@@ -90,7 +90,7 @@ class DetalleCarritoViewSet(viewsets.ModelViewSet):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def ultimo_carrito_usuario(request):
-    carrito = Carrito.objects.filter(id_usuario=request.user).order_by('-fecha_creacion').first()
+    carrito = Carrito.objects.filter(id_usuario=request.user, eliminado=False).order_by('-fecha_creacion').first()
 
     if not carrito:
         carrito = Carrito.objects.create(
@@ -103,7 +103,7 @@ def ultimo_carrito_usuario(request):
 
 
 class PedidoViewSet(viewsets.ModelViewSet):
-    queryset = Pedido.objects.all()
+    queryset = Pedido.objects.filter(eliminado=False)
     serializer_class = PedidoSerializer
     permission_classes = [IsAuthenticated]
 
@@ -156,13 +156,13 @@ def iniciar_pago(request):
     )
 
     # Crear detalles
-    for item in carrito.items.all():  # ajustá según tus relaciones
+    for item in DetalleCarrito.objects.filter(id_carrito=id_carrito): 
         DetallePedido.objects.create(
             id_pedido=pedido,
-            id_producto=item.producto,
+            id_producto=item.id_producto.id,
             cantidad=item.cantidad,
-            precio=item.producto.precio,
-            precio_total=item.producto.precio * item.cantidad
+            precio=item.id_producto.precio,
+            precio_total=item.id_producto.precio * item.cantidad
         )
 
     # Crear Stripe Checkout Session
