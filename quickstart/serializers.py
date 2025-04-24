@@ -103,13 +103,13 @@ class CarritoSerializer(ModelSerializer):
         fields = ['id', 'fecha_creacion', 'id_usuario', 'detalles']
 
 
-class DetallePedidoSerializer(serializers.ModelSerializer):
+class DetallePedidoSerializer(ModelSerializer):
     class Meta:
         model = DetallePedido
         fields = ['id', 'id_producto', 'cantidad', 'precio', 'precio_total', 'fecha_creacion']
 
 
-class PedidoSerializer(serializers.ModelSerializer):
+class PedidoSerializer(ModelSerializer):
     detalles = DetallePedidoSerializer(many=True, read_only=True)
 
     class Meta:
