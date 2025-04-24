@@ -103,7 +103,7 @@ def ultimo_carrito_usuario(request):
 
 
 class PedidoViewSet(viewsets.ModelViewSet):
-    queryset = Pedido.objects.filter(eliminado=False)
+    queryset = Pedido.objects.all()
     serializer_class = PedidoSerializer
     permission_classes = [IsAuthenticated]
 
