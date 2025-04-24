@@ -73,3 +73,39 @@ class DetalleCarrito(SoftDeleteModel):
         return f'{self.cantidad}x {self.id_producto.nombre} en carrito {self.id_carrito.id}'
     
 
+class Pedido(models.Model):
+    ESTADOS = (
+        ('pendiente', 'Pendiente'),
+        ('confirmado', 'Confirmado'),
+        ('enviado', 'Enviado'),
+        ('entregado', 'Entregado'),
+        ('cancelado', 'Cancelado'),
+    )
+
+    id_usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='pedidos')
+    id_carrito = models.ForeignKey(Carrito, on_delete=models.SET_NULL, null=True, blank=True)
+    monto_total = models.DecimalField(max_digits=10, decimal_places=2)
+    direccion_entrega = models.CharField(max_length=255)
+    latitud = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitud = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='pendiente')
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_modificacion = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Pedido #{self.pk} - {self.estado}"
+    
+
+class DetallePedido(models.Model):
+    id_pedido = models.ForeignKey(Pedido, on_delete=models.CASCADE, related_name='detalles')
+    id_producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
+    cantidad = models.PositiveIntegerField()
+    precio = models.DecimalField(max_digits=10, decimal_places=2)  # Precio unitario
+    precio_total = models.DecimalField(max_digits=10, decimal_places=2)  # cantidad * precio
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Detalle del Pedido {self.id_pedido_id} - Producto {self.id_producto_id}"
+    
+
+    

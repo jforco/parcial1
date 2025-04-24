@@ -36,6 +36,7 @@ router.register(r'sucursales', SucursalViewSet)
 router.register(r'inventarios', InventariosViewSet)
 router.register(r'carritos', CarritoViewSet)
 router.register(r'detalles_carrito', DetalleCarritoViewSet)
+router.register(r'pedidos', PedidoViewSet)
 
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browsable API.
@@ -56,4 +57,6 @@ urlpatterns += [
 #vistas personalizadas
 urlpatterns += [ 
     path('api/ultimo_carrito/', ultimo_carrito_usuario),
+    path('api/pagar/', iniciar_pago),
+    path('api/stripe/webhook/', stripe_webhook),
 ]

@@ -101,3 +101,19 @@ class CarritoSerializer(ModelSerializer):
     class Meta:
         model = Carrito
         fields = ['id', 'fecha_creacion', 'id_usuario', 'detalles']
+
+
+class DetallePedidoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DetallePedido
+        fields = ['id', 'id_producto', 'cantidad', 'precio', 'precio_total', 'fecha_creacion']
+
+
+class PedidoSerializer(serializers.ModelSerializer):
+    detalles = DetallePedidoSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Pedido
+        fields = ['id', 'id_carrito', 'id_usuario', 'monto_total', 'direccion_entrega',
+                  'latitud', 'longitud', 'estado', 'fecha_creacion', 'fecha_modificacion', 'detalles']
+        read_only_fields = ['id_usuario', 'fecha_creacion', 'fecha_modificacion', 'detalles']
