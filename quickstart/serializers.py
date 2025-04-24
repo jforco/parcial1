@@ -1,5 +1,5 @@
 from django.contrib.auth.models import Group, User, Permission
-from rest_framework.serializers import ModelSerializer, HyperlinkedModelSerializer, SlugRelatedField, PrimaryKeyRelatedField, SerializerMethodField
+from rest_framework.serializers import ModelSerializer, HyperlinkedModelSerializer, SlugRelatedField, PrimaryKeyRelatedField, SerializerMethodField, CharField, DecimalField
 from .models import *
 
 class RegisterSerializer(ModelSerializer):
@@ -96,10 +96,14 @@ class ProductoSimpleSerializer(ModelSerializer):
 
 
 class DetalleCarritoSerializer(ModelSerializer):
-    id_producto = ProductoSimpleSerializer(read_only=True)
+    id_producto = PrimaryKeyRelatedField(queryset=Producto.objects.all())
+    producto_nombre = CharField(source='id_producto.nombre', read_only=True)
+    producto_precio = DecimalField(source='id_producto.precio', max_digits=10, decimal_places=2, read_only=True)
+
     class Meta:
         model = DetalleCarrito
-        fields = ['id', 'id_carrito', 'id_producto', 'cantidad']
+        fields = ['id', 'id_carrito', 'id_producto', 'producto_nombre', 'producto_precio', 'cantidad']
+
 
 
 class CarritoSerializer(ModelSerializer):

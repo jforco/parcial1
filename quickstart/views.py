@@ -159,10 +159,10 @@ def iniciar_pago(request):
     for item in DetalleCarrito.objects.filter(id_carrito=id_carrito): 
         DetallePedido.objects.create(
             id_pedido=pedido,
-            id_producto=item.id_producto.id,
+            id_producto=item.id_producto,
             cantidad=item.cantidad,
-            precio=item.id_producto.precio,
-            precio_total=item.id_producto.precio * item.cantidad
+            precio=item.producto_precio,
+            precio_total=item.producto_precio * item.cantidad
         )
 
     # Crear Stripe Checkout Session
