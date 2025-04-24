@@ -73,7 +73,7 @@ class InventariosViewSet(SoftDeleteModelViewSet):
 
 
 class CarritoViewSet(viewsets.ModelViewSet):
-    queryset = Carrito.objects.all()
+    queryset = Carrito.objects.filter(eliminado=False)
     serializer_class = CarritoSerializer
     permission_classes = [IsAuthenticated]
 
@@ -82,7 +82,7 @@ class CarritoViewSet(viewsets.ModelViewSet):
 
 
 class DetalleCarritoViewSet(viewsets.ModelViewSet):
-    queryset = DetalleCarrito.objects.all()
+    queryset = DetalleCarrito.objects.filter(eliminado=False)
     serializer_class = DetalleCarritoSerializer
     permission_classes = [IsAuthenticated]
 
