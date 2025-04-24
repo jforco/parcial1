@@ -89,10 +89,17 @@ class InventarioSerializer(ModelSerializer):
         fields = ['id', 'producto', 'sucursal', 'cantidad']
 
 
+class ProductoSimpleSerializer(ModelSerializer):
+    class Meta:
+        model = Producto
+        fields = ['id', 'nombre'] 
+
+
 class DetalleCarritoSerializer(ModelSerializer):
+    id_producto = ProductoSimpleSerializer(read_only=True)
     class Meta:
         model = DetalleCarrito
-        fields = '__all__'
+        fields = ['id', 'id_producto', 'cantidad']
 
 
 class CarritoSerializer(ModelSerializer):
