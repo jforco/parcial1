@@ -20,6 +20,24 @@ class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
     permission_classes = [AllowAny]
 
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+
+        if serializer.is_valid():
+            user = serializer.save()
+
+            # Ahora usamos el CustomTokenObtainPairSerializer para generar misma respuesta que login
+            token_serializer = CustomTokenObtainPairSerializer(data={
+                'username': request.data['username'],
+                'password': request.data['password']
+            }, context={'request': request} )
+
+            if token_serializer.is_valid():
+                return Response(token_serializer.validated_data, status=status.HTTP_201_CREATED)
+            else:
+                return Response(token_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):

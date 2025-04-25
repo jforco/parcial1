@@ -26,6 +26,7 @@ class RegisterSerializer(ModelSerializer):
         }
 
     def create(self, validated_data):
+        print('Datos validados:', validated_data)
         groups_data = validated_data.pop('groups', [])
         user = User.objects.create_user(**validated_data)
         user.groups.set(groups_data) 
