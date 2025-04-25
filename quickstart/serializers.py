@@ -1,6 +1,15 @@
 from django.contrib.auth.models import Group, User, Permission
 from rest_framework.serializers import ModelSerializer, HyperlinkedModelSerializer, SlugRelatedField, PrimaryKeyRelatedField, SerializerMethodField, CharField, DecimalField
 from .models import *
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        # Agrega datos del usuario
+        data['user'] = UserSerializer(self.user, context=self.context).data
+        return data
+    
 
 class RegisterSerializer(ModelSerializer):
     groups = SlugRelatedField(
@@ -50,12 +59,6 @@ class UserSerializer(HyperlinkedModelSerializer):
     class Meta:
         model = User
         fields = ['url', 'username', 'email', 'groups']
-
-
-class GroupSerializer(HyperlinkedModelSerializer):
-    class Meta:
-        model = Group
-        fields = ['url', 'name']
 
 
 class CategoriaSerializer(ModelSerializer):
