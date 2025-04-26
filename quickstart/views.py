@@ -7,13 +7,14 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import *
 from quickstart.serializers import *
 from django.utils import timezone
-from django.db.models import F, Sum, DecimalField, ExpressionWrapper
+from django.db.models import F, Sum, DecimalField, ExpressionWrapper, Prefetch
 from decimal import Decimal, ROUND_HALF_UP
-import stripe
+
 from django.http import HttpResponse
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
-
+import stripe
+stripe.api_key = settings.STRIPE_SECRET_KEY
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -81,7 +82,11 @@ class CategoriaViewSet(SoftDeleteModelViewSet):
 
 class ProductoViewSet(SoftDeleteModelViewSet):
     queryset = Producto.objects.filter(eliminado=False)
-    permission_classes = [IsAuthenticated]
+    
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [AllowAny()]
+        return [IsAuthenticated()]
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -104,7 +109,9 @@ class InventariosViewSet(SoftDeleteModelViewSet):
 
 
 class CarritoViewSet(viewsets.ModelViewSet):
-    queryset = Carrito.objects.filter(eliminado=False)
+    queryset = Carrito.objects.filter(eliminado=False).prefetch_related(
+        Prefetch('detalles', queryset=DetalleCarrito.objects.filter(eliminado=False))
+    )
     serializer_class = CarritoSerializer
     permission_classes = [IsAuthenticated]
 
@@ -168,14 +175,17 @@ def iniciar_pago(request):
         return Response({'error': 'Carrito no válido'}, status=400)
 
     # Crear pedido pendiente
-    total_carrito = DetalleCarrito.objects.filter(id_carrito=id_carrito).annotate(
-        subtotal=ExpressionWrapper(
-            F('cantidad') * F('id_producto__precio'),
-            output_field=DecimalField(max_digits=12, decimal_places=2)
-        )
-    ).aggregate(total=Sum('subtotal'))['total'] or 0
-    total_carrito = total_carrito.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    items_carrito = DetalleCarrito.objects.filter(id_carrito=id_carrito).select_related('id_producto')
+    if not items_carrito.exists():
+        return Response({'error': 'El carrito está vacío, no se puede crear el pedido.'}, status=400)
 
+    total_carrito = sum(item.cantidad * item.id_producto.precio for item in items_carrito)
+    total_carrito = Decimal(total_carrito).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+    if total_carrito == 0:
+        return Response({'error': 'El carrito está vacío o con items que no tienen valor.'}, status=400);
+
+    # crear pedido y detalles
     pedido = Pedido.objects.create(
         id_usuario=request.user,
         id_carrito=carrito,
@@ -186,20 +196,32 @@ def iniciar_pago(request):
         longitud=request.data.get('longitud')
     )
 
-    # Crear detalles
-    for item in DetalleCarrito.objects.filter(id_carrito=id_carrito): 
+    detalles_pedido = [
+        DetallePedido(
+            id_pedido=pedido,
+            id_producto=item.id_producto,
+            cantidad=item.cantidad,
+            precio=item.id_producto.precio,
+            precio_total=item.id_producto.precio * item.cantidad
+        )
+        for item in items_carrito
+    ]
+    DetallePedido.objects.bulk_create(detalles_pedido)
+    '''for item in DetalleCarrito.objects.filter(id_carrito=id_carrito): 
         DetallePedido.objects.create(
             id_pedido=pedido,
             id_producto=item.id_producto,
             cantidad=item.cantidad,
-            precio=item.producto_precio,
-            precio_total=item.producto_precio * item.cantidad
-        )
+            precio=item.id_producto.precio,
+            precio_total=item.id_producto.precio * item.cantidad
+        )'''
 
     # Crear Stripe Checkout Session
     tasa_cambio = Decimal('6.97')
     cobro_dolar = (total_carrito / tasa_cambio).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
     
+    urlFrontBase = request.data.get('url_front_base')
+
     session = stripe.checkout.Session.create(
         payment_method_types=['card'],
         mode='payment',
@@ -216,8 +238,8 @@ def iniciar_pago(request):
         metadata={
             'pedido_id': pedido.id
         },
-        success_url='http://localhost:3000/success',
-        cancel_url='http://localhost:3000/cancel',
+        success_url=urlFrontBase + '/success',
+        cancel_url=urlFrontBase + '/cancel',
     )
 
     return Response({'sessionId': session.id})
@@ -238,14 +260,22 @@ def stripe_webhook(request):
     except stripe.error.SignatureVerificationError:
         return HttpResponse(status=400)
 
+    if event['type'] != 'checkout.session.completed' or event['type'] != 'checkout.session.expired':
+        return HttpResponse(status=200)
+
+    pedido_id = session['metadata']['pedido_id']
+    try:
+        pedido = Pedido.objects.get(id=pedido_id)
+    except Pedido.DoesNotExist:
+        return HttpResponse(status=404)
+    session = event['data']['object']
+
     if event['type'] == 'checkout.session.completed':
-        session = event['data']['object']
-        pedido_id = session['metadata']['pedido_id']
-        Pedido.objects.filter(id=pedido_id).update(estado='confirmado')
+        pedido.estado = 'confirmado'
+        pedido.save()
 
     elif event['type'] == 'checkout.session.expired':
-        session = event['data']['object']
-        pedido_id = session['metadata']['pedido_id']
-        Pedido.objects.filter(id=pedido_id).update(estado='cancelado')
+        pedido.estado = 'confirmado'
+        pedido.save()
 
     return HttpResponse(status=200)

@@ -67,6 +67,7 @@ class CategoriaSerializer(ModelSerializer):
         model = Categoria
         fields = ['id', 'nombre', 'descripcion']
 
+
 class ProductoListSerializer(ModelSerializer):
     categoria = CharField(source='categoria.nombre', read_only=True)
     categoria_id = IntegerField(source='categoria.id', read_only=True)
@@ -162,11 +163,15 @@ class DetalleCarritoSerializer(ModelSerializer):
 
 
 class CarritoSerializer(ModelSerializer):
-    detalles = DetalleCarritoSerializer(many=True, read_only=True)
+    detalles = SerializerMethodField()
 
     class Meta:
         model = Carrito
         fields = ['id', 'fecha_creacion', 'id_usuario', 'detalles']
+    
+    def get_detalles(self, obj):
+        detalles_activos = obj.detalles.filter(eliminado=False)
+        return DetalleCarritoSerializer(detalles_activos, many=True).data
 
 
 class DetallePedidoSerializer(ModelSerializer):
