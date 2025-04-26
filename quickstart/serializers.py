@@ -87,10 +87,12 @@ class SucursalSerializer(ModelSerializer):
 
 
 class InventarioSerializer(ModelSerializer):
-    sucursal = SucursalSerializer() 
+    sucursal = PrimaryKeyRelatedField(queryset=Sucursal.objects.all())
+    producto = PrimaryKeyRelatedField(queryset=Producto.objects.all())
+    sucursal_detalle = SucursalSerializer(source='sucursal', read_only=True)
     class Meta:
         model = Inventario
-        fields = ['id', 'producto', 'sucursal', 'cantidad']
+        fields = ['id', 'producto', 'sucursal', 'sucursal_detalle', 'cantidad']
 
 
 class ProductoSimpleSerializer(ModelSerializer):
