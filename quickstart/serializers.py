@@ -65,7 +65,7 @@ class UserSerializer(HyperlinkedModelSerializer):
 class CategoriaSerializer(ModelSerializer):
     class Meta:
         model = Categoria
-        fields = ['id', 'nombre']
+        fields = ['id', 'nombre', 'descripcion']
 
 
 class ProductoSerializer(ModelSerializer):
@@ -107,6 +107,26 @@ class DetalleCarritoSerializer(ModelSerializer):
     class Meta:
         model = DetalleCarrito
         fields = ['id', 'id_carrito', 'id_producto', 'producto_nombre', 'producto_precio', 'cantidad']
+
+    def create(self, validated_data):
+        carrito = validated_data['id_carrito']
+        producto = validated_data['id_producto']
+        cantidad_nueva = validated_data['cantidad']
+
+        # Verificamos si ya existe un detalle para el mismo carrito y producto
+        detalle_existente = DetalleCarrito.objects.filter(
+            id_carrito=carrito,
+            id_producto=producto,
+            eliminado=False
+        ).first()
+
+        if detalle_existente:
+            detalle_existente.cantidad += cantidad_nueva
+            detalle_existente.save()
+            return detalle_existente
+
+        # Si no existe, se crea como nuevo
+        return super().create(validated_data)
 
 
 
