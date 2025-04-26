@@ -1,5 +1,5 @@
 from django.contrib.auth.models import Group, User, Permission
-from rest_framework.serializers import ModelSerializer, HyperlinkedModelSerializer, SlugRelatedField, PrimaryKeyRelatedField, SerializerMethodField, CharField, DecimalField
+from rest_framework.serializers import ModelSerializer, HyperlinkedModelSerializer, SlugRelatedField, PrimaryKeyRelatedField, SerializerMethodField, CharField, DecimalField, IntegerField
 from .models import *
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
@@ -67,8 +67,37 @@ class CategoriaSerializer(ModelSerializer):
         model = Categoria
         fields = ['id', 'nombre', 'descripcion']
 
+class ProductoListSerializer(ModelSerializer):
+    categoria = CharField(source='categoria.nombre', read_only=True)
+    categoria_id = IntegerField(source='categoria.id', read_only=True)
+    class Meta:
+        model = Producto
+        fields = ['id', 'categoria', 'categoria_id', 'nombre', 'tipo', 'medidas', 'precio', 'foto']
 
-class ProductoSerializer(ModelSerializer):
+
+class ProductoDetailSerializer(ModelSerializer):
+    categoria = CharField(source='categoria.nombre', read_only=True)
+    categoria_id = IntegerField(source='categoria.id', read_only=True)
+    inventario = SerializerMethodField()
+
+    class Meta:
+        model = Producto
+        fields = ['id', 'categoria', 'categoria_id', 'nombre', 'tipo', 'medidas', 'precio', 'foto', 'inventario']
+
+    def get_inventario(self, obj):
+        inventarios = Inventario.objects.filter(producto=obj, eliminado=False)
+        return InventarioSerializer(inventarios, many=True).data
+    
+
+class ProductoCreateUpdateSerializer(ModelSerializer):
+    categoria = PrimaryKeyRelatedField(queryset=Categoria.objects.all())
+
+    class Meta:
+        model = Producto
+        fields = ['id', 'categoria', 'nombre', 'tipo', 'medidas', 'precio', 'foto']
+    
+
+'''class ProductoSerializer(ModelSerializer):
     inventario = SerializerMethodField()
 
     class Meta:
@@ -77,7 +106,7 @@ class ProductoSerializer(ModelSerializer):
 
     def get_inventario(self, obj):
         inventarios = Inventario.objects.filter(producto=obj, eliminado=False)  # si usás soft delete
-        return InventarioSerializer(inventarios, many=True).data
+        return InventarioSerializer(inventarios, many=True).data'''
 
 
 class SucursalSerializer(ModelSerializer):

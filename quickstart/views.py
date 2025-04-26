@@ -81,8 +81,14 @@ class CategoriaViewSet(SoftDeleteModelViewSet):
 
 class ProductoViewSet(SoftDeleteModelViewSet):
     queryset = Producto.objects.filter(eliminado=False)
-    serializer_class = ProductoSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return ProductoDetailSerializer
+        elif self.action in ['create', 'update', 'partial_update']:
+            return ProductoCreateUpdateSerializer
+        return ProductoListSerializer
 
 
 class SucursalViewSet(SoftDeleteModelViewSet):
