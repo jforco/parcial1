@@ -281,6 +281,13 @@ def stripe_webhook(request):
     if event['type'] == 'checkout.session.completed':
         pedido.estado = 'confirmado'
         pedido.save()
+
+        if pedido.id_carrito:
+            carrito = pedido.id_carrito
+            if not carrito.eliminado:
+                carrito.delete()
+                nuevo_carrito = Carrito.objects.create(id_usuario=pedido.id_usuario, fecha_creacion=timezone.now())
+
     elif event['type'] == 'checkout.session.expired':
         pedido.estado = 'cancelado'
         pedido.save()
