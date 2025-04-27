@@ -148,6 +148,9 @@ class PedidoViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return Pedido.objects.filter(id_usuario=self.request.user)
 
+    def get_object(self):
+        return Pedido.objects.get(pk=self.kwargs['pk'])
+
     def create(self, request, *args, **kwargs):
         return Response({'detail': 'Creación de pedidos no permitida por este endpoint.'}, status=status.HTTP_403_FORBIDDEN)
 
@@ -163,6 +166,12 @@ class PedidoViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(instance)
             return Response(serializer.data)
         return Response({'detail': 'Solo se permite modificar el estado.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['get'], url_path='todos')
+    def listar_todos(self, request):
+        pedidos = Pedido.objects.all()
+        serializer = self.get_serializer(pedidos, many=True)
+        return Response(serializer.data)
     
 
 @api_view(['POST'])
@@ -217,8 +226,8 @@ def iniciar_pago(request):
         )'''
 
     # Crear Stripe Checkout Session
-    tasa_cambio = Decimal('6.97')
-    cobro_dolar = (total_carrito / tasa_cambio).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    #tasa_cambio = Decimal('6.97')
+    #cobro_dolar = (total_carrito / tasa_cambio).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
     
     urlFrontBase = request.data.get('url_front_base')
 
@@ -227,11 +236,11 @@ def iniciar_pago(request):
         mode='payment',
         line_items=[{
             'price_data': {
-                'currency': 'usd',
+                'currency': 'bob',
                 'product_data': {
                     'name': 'Pedido #{}'.format(pedido.id),
                 },
-                'unit_amount': int(cobro_dolar * 100),
+                'unit_amount': int(total_carrito * 100),
             },
             'quantity': 1,
         }],
