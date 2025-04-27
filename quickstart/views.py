@@ -175,7 +175,7 @@ def iniciar_pago(request):
         return Response({'error': 'Carrito no válido'}, status=400)
 
     # Crear pedido pendiente
-    items_carrito = DetalleCarrito.objects.filter(id_carrito=id_carrito).select_related('id_producto')
+    items_carrito = DetalleCarrito.objects.filter(id_carrito=id_carrito, eliminado=False).select_related('id_producto')
     if not items_carrito.exists():
         return Response({'error': 'El carrito está vacío, no se puede crear el pedido.'}, status=400)
 
