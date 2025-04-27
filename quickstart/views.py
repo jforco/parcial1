@@ -257,34 +257,32 @@ def iniciar_pago(request):
 @csrf_exempt
 def stripe_webhook(request):
     payload = request.body
-    sig_header = request.META['HTTP_STRIPE_SIGNATURE']
+    sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
     event = None
 
     try:
         event = stripe.Webhook.construct_event(
             payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
         )
-    except ValueError:
-        return HttpResponse(status=400)
-    except stripe.error.SignatureVerificationError:
+    except (ValueError, stripe.error.SignatureVerificationError) as e:
         return HttpResponse(status=400)
 
-    if event['type'] != 'checkout.session.completed' or event['type'] != 'checkout.session.expired':
+    if event['type'] not in ['checkout.session.completed', 'checkout.session.expired']:
         return HttpResponse(status=200)
 
+    session = event['data']['object']
     pedido_id = session['metadata']['pedido_id']
+
     try:
         pedido = Pedido.objects.get(id=pedido_id)
     except Pedido.DoesNotExist:
         return HttpResponse(status=404)
-    session = event['data']['object']
 
     if event['type'] == 'checkout.session.completed':
         pedido.estado = 'confirmado'
         pedido.save()
-
     elif event['type'] == 'checkout.session.expired':
-        pedido.estado = 'confirmado'
+        pedido.estado = 'cancelado'
         pedido.save()
 
     return HttpResponse(status=200)
